@@ -23,24 +23,19 @@ export class BackendStack extends cdk.Stack {
     });
 
     const lambdaIntegration = new apigateway.LambdaIntegration(getProductsList);
-    const productResource = api.root.addResource("products");
-    productResource.addMethod("GET", lambdaIntegration, {
-      methodResponses: [
-        {
-          statusCode: "200",
-          responseParameters: {
-            "method.response.header.Access-Control-Allow-Origin": true,
-          },
-        },
-        {
-          statusCode: "500",
-          responseParameters: {
-            "method.response.header.Access-Control-Allow-Origin": true,
-          },
-        },
-      ],
+
+    const productsResource = api.root.addResource("products");
+    const singleProduct = productsResource.addResource("{productId}");
+
+    singleProduct.addMethod("GET", lambdaIntegration);
+    productsResource.addMethod("GET", lambdaIntegration);
+
+    productsResource.addCorsPreflight({
+      allowOrigins: [frontendUrl],
+      allowMethods: ["GET", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization"],
     });
-    productResource.addCorsPreflight({
+    singleProduct.addCorsPreflight({
       allowOrigins: [frontendUrl],
       allowMethods: ["GET", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization"],

@@ -1,4 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { ProductService } from "./productService";
 
 export const frontendUrl = "https://d1qgoiucsnqszv.cloudfront.net";
 
@@ -6,34 +7,50 @@ export async function main(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   try {
-    const mockProducts = [
-      {
-        id: "1",
-        title: "Product 1",
-        price: 100,
-        description: "This is product 1",
-      },
-      {
-        id: "2",
-        title: "Product 2",
-        price: 200,
-        description: "This is product 2",
-      },
-      {
-        id: "3",
-        title: "Product 3",
-        price: 300,
-        description: "This is product 3",
-      },
-    ];
+    if (event.resource === "/products" && event.httpMethod === "GET") {
+      const products = ProductService.getAll();
+      return {
+        statusCode: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": frontendUrl,
+        },
+        body: JSON.stringify(products),
+      };
+    }
+    if (
+      event.resource === "/products/{productId}" &&
+      event.httpMethod === "GET"
+    ) {
+      const productId = event.pathParameters?.productId;
+      const product = productId ? ProductService.getById(productId) : undefined;
 
+      if (!product) {
+        return {
+          statusCode: 404,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": frontendUrl,
+          },
+          body: JSON.stringify({ message: "Product not found" }),
+        };
+      }
+      return {
+        statusCode: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": frontendUrl,
+        },
+        body: JSON.stringify(product),
+      };
+    }
     return {
-      statusCode: 200,
+      statusCode: 400,
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": frontendUrl,
       },
-      body: JSON.stringify(mockProducts),
+      body: JSON.stringify({ message: "Bad request" }),
     };
   } catch (error) {
     return {
