@@ -13,7 +13,6 @@ class ValidationError extends Error {
     this.name = "ValidationError";
   }
 }
-
 interface Product {
   id: string;
   title: string;
@@ -26,83 +25,88 @@ interface Stock {
   count: number;
 }
 
-interface CombinedProduct extends Product {
-  count: number;
-}
-
-export const createProduct: Handler = async (event: APIGatewayProxyEvent
+export const createProduct: Handler = async (
+  event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-    try {
-      const parsedBody = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+  try {
+    const parsedBody =
+      typeof event.body === "string" ? JSON.parse(event.body) : event.body;
 
-      console.log("Received event:", parsedBody);
-      if (!parsedBody.title || typeof parsedBody.title !== "string" || parsedBody.title.trim() === "") {
-        throw new ValidationError("The 'title' field is required and must be a non-empty string.");
-      }
-  
-      if (typeof parsedBody.price !== "number" || parsedBody.price <= 0) {
-        throw new ValidationError("The 'price' field must be a positive number.");
-      }
-  
-      if (typeof parsedBody.count !== "number" || parsedBody.count < 0) {
-        throw new ValidationError("The 'count' field must be a non-negative number.");
-      }
+    if (
+      !parsedBody.title ||
+      typeof parsedBody.title !== "string" ||
+      parsedBody.title.trim() === ""
+    ) {
+      throw new ValidationError(
+        "The 'title' field is required and must be a non-empty string."
+      );
+    }
 
-        const uuidv4 = await uuidv4Promise;
+    if (typeof parsedBody.price !== "number" || parsedBody.price <= 0) {
+      throw new ValidationError("The 'price' field must be a positive number.");
+    }
 
-        const productId = uuidv4();
+    if (typeof parsedBody.count !== "number" || parsedBody.count < 0) {
+      throw new ValidationError(
+        "The 'count' field must be a non-negative number."
+      );
+    }
 
-      const addProductCommand = new PutItemCommand({
-        TableName: productsTable,
-        Item: {
-          id: { S: productId },   
-          title: { S: parsedBody.title }, 
+    const uuidv4 = await uuidv4Promise;
+
+    const productId = uuidv4();
+
+    const addProductCommand = new PutItemCommand({
+      TableName: productsTable,
+      Item: {
+        id: { S: productId },
+        title: { S: parsedBody.title },
         description: { S: parsedBody.description || "" },
         price: { N: parsedBody.price.toString() },
-        }
-      });
+      },
+    });
 
-       await dynamoDB.send(addProductCommand);
-      console.log("Product added successfully:", productId);
+    await dynamoDB.send(addProductCommand);
+    console.log("Product added successfully:", productId);
 
-      const addStockCommand = new PutItemCommand({
-        TableName: stockTable,
-        Item: {
-          product_id: { S: productId },      
-          count: { N: parsedBody.count.toString() },  
-        },
-      });
-  
-      await dynamoDB.send(addStockCommand);
-      console.log("Stock added successfully for product:", productId);
+    const addStockCommand = new PutItemCommand({
+      TableName: stockTable,
+      Item: {
+        product_id: { S: productId },
+        count: { N: parsedBody.count.toString() },
+      },
+    });
 
+    await dynamoDB.send(addStockCommand);
+    console.log("Stock added successfully for product:", productId);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: "Product and stock added successfully.",
+        productId: productId,
+      }),
+    };
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      console.warn("Validation error:", error.message);
       return {
-        statusCode: 200,
+        statusCode: 400,
+        body: JSON.stringify({ message: error.message }),
+      };
+    } else {
+      console.error("Error:", error);
+      return {
+        statusCode: 500,
         body: JSON.stringify({
-          message: "Product and stock added successfully.",
-          productId: productId,
+          message: (error as Error).message,
         }),
       };
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        console.warn("Validation error:", error.message);
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ message: error.message }),
-        };
-      } else {
-        console.error('Error:', error);
-        return {
-          statusCode: 500,
-          body: JSON.stringify({
-            message: (error as Error).message,
-          }),
-        };
-    }}
+    }
+  }
 };
 
 export const getProductsList = async () => {
-  console.log("PRODUCTS_TABLE_NAME:", productsTable);
   try {
     const productsCommand = new ScanCommand({
       TableName: productsTable,
@@ -110,33 +114,38 @@ export const getProductsList = async () => {
 
     const result = await dynamoDB.send(productsCommand);
 
-    const products : Product[]  = result.Items?.map((item) => ({
-      id: item.id.S || "",
-      title: item.title.S || "",
-      description: item.description.S || "",
-      price:  parseFloat(item.price.N || "0"),
-    })) || [];
+    const products: Product[] =
+      result.Items?.map((item) => ({
+        id: item.id.S || "",
+        title: item.title.S || "",
+        description: item.description.S || "",
+        price: parseFloat(item.price.N || "0"),
+      })) || [];
 
     const stockCommand = new ScanCommand({
       TableName: stockTable,
     });
     const stockResult = await dynamoDB.send(stockCommand);
 
-    const stock: { [key: string]: Stock } = (stockResult.Items || []).reduce((acc, item) => {
-      const productId = item.product_id.S || "";
-      const countString = (item.count as AttributeValue).N || "0"; 
-    acc[productId] = {
-      product_id: productId,
-      count: parseInt(countString, 10), 
-    };
-      return acc;
-    },{} as { [key: string]: Stock } );
+    const stock: { [key: string]: Stock } = (stockResult.Items || []).reduce(
+      (acc, item) => {
+        const productId = item.product_id.S || "";
+        const countString = (item.count as AttributeValue).N || "0";
+        acc[productId] = {
+          product_id: productId,
+          count: parseInt(countString, 10),
+        };
+        return acc;
+      },
+      {} as { [key: string]: Stock }
+    );
 
-    
-    const combinedProducts = products && products.map((product) => ({
-      ...product,
-      count: stock[product.id]?.count || 0, 
-    }));
+    const combinedProducts =
+      products &&
+      products.map((product) => ({
+        ...product,
+        count: stock[product.id]?.count || 0,
+      }));
 
     return {
       statusCode: 200,
@@ -181,10 +190,7 @@ export const getProductById = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    console.log("Raw pathParameters:", JSON.stringify(event.pathParameters));
-
     const productId = event.pathParameters?.productId;
-console.log("id", productId)
     if (!productId) {
       return {
         statusCode: 400,
@@ -196,14 +202,14 @@ console.log("id", productId)
 
     console.log("Fetching product with ID:", productId);
 
-    const command = new GetItemCommand({
+    const productCommand = new GetItemCommand({
       TableName: productsTable,
       Key: {
         id: { S: productId },
       },
     });
 
-    const productResult = await dynamoDB.send(command);
+    const productResult = await dynamoDB.send(productCommand);
 
     if (!productResult.Item) {
       return {
@@ -221,9 +227,30 @@ console.log("id", productId)
       price: parseFloat(productResult.Item.price.N || "0"),
     };
 
+    console.log("Fetching stock for product with ID:", productId);
+    const stockCommand = new GetItemCommand({
+      TableName: stockTable,
+      Key: {
+        product_id: { S: productId },
+      },
+    });
+
+    const stockResult = await dynamoDB.send(stockCommand);
+
+    const stock = stockResult.Item
+      ? {
+          count: parseInt(stockResult.Item.count.N || "0", 10),
+        }
+      : {
+          count: 0,
+        };
+
     return {
       statusCode: 200,
-      body: JSON.stringify(product),
+      body: JSON.stringify({
+        ...product,
+        count: stock.count,
+      }),
     };
   } catch (error) {
     console.error("Error retrieving product by ID:", error);

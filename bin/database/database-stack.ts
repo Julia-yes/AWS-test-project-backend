@@ -65,16 +65,21 @@ export class DatabaseStack extends Stack {
       },
     });
 
-    const getProductByIdLambda = new lambda.Function(this, "GetProductByIdFunction", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      memorySize: 512,
-      timeout: cdk.Duration.seconds(5),
-      handler: "handler.getProductById",
-      code: lambda.Code.fromAsset(join(__dirname, "./")),
-      environment: {
-        PRODUCTS_TABLE_NAME: productsTable.tableName,
-      },
-    });
+    const getProductByIdLambda = new lambda.Function(
+      this,
+      "GetProductByIdFunction",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        memorySize: 512,
+        timeout: cdk.Duration.seconds(5),
+        handler: "handler.getProductById",
+        code: lambda.Code.fromAsset(join(__dirname, "./")),
+        environment: {
+          PRODUCTS_TABLE_NAME: productsTable.tableName,
+          STOCK_TABLE_NAME: stockTable.tableName,
+        },
+      }
+    );
 
     const getStockLambda = new lambda.Function(this, "GetStockFunction", {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -93,6 +98,7 @@ export class DatabaseStack extends Stack {
     productsTable.grantReadData(getStockLambda);
     stockTable.grantReadData(getStockLambda);
     stockTable.grantReadData(getProductsListLambda);
+    stockTable.grantReadData(getProductByIdLambda);
 
     const api = new apigateway.RestApi(this, "ProductsApi", {
       restApiName: "Products Service",
