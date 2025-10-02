@@ -82,25 +82,20 @@ export const createProduct: Handler = async (
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        message: "Product and stock added successfully.",
-        productId: productId,
-      }),
+      body: "Product and stock added successfully.",
     };
   } catch (error) {
     if (error instanceof ValidationError) {
       console.warn("Validation error:", error.message);
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: error.message }),
+        body: error.message,
       };
     } else {
       console.error("Error:", error);
       return {
         statusCode: 500,
-        body: JSON.stringify({
-          message: (error as Error).message,
-        }),
+        body: (error as Error).message,
       };
     }
   }
@@ -149,7 +144,7 @@ export const getProductsList = async () => {
 
     return {
       statusCode: 200,
-      body: JSON.stringify(combinedProducts),
+      body: combinedProducts,
     };
   } catch (error) {
     console.error("Error retrieving products:", error);
@@ -194,9 +189,7 @@ export const getProductById = async (
     if (!productId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({
-          message: "Missing required path parameter 'productId'.",
-        }),
+        body: "Missing required path parameter 'productId'.",
       };
     }
 
@@ -214,9 +207,7 @@ export const getProductById = async (
     if (!productResult.Item) {
       return {
         statusCode: 404,
-        body: JSON.stringify({
-          message: `Product with ID '${productId}' not found.`,
-        }),
+        body: `Product with ID '${productId}' not found.`,
       };
     }
 
@@ -257,10 +248,7 @@ export const getProductById = async (
 
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        message: "Error retrieving product by ID.",
-        error: (error as Error).message,
-      }),
+      body: "Error retrieving product by ID.",
     };
   }
 };
