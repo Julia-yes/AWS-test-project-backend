@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "0.1.0",
   "bin": {
-    "backend": "bin/backend.js"
+    "backend": "bin/database.js"
   },
   "scripts": {
     "build": "tsc",
@@ -22,6 +22,8 @@
   },
   "dependencies": {
     "aws-cdk-lib": "2.213.0",
-    "constructs": "^10.0.0"
+    "axios": "^1.12.2",
+    "constructs": "^10.0.0",
+    "dotenv": "^17.2.2"
   }
 }
