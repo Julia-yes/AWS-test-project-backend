@@ -8,6 +8,7 @@ import {  join } from 'path';
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
+import { CfnOutput } from "aws-cdk-lib";
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -113,6 +114,16 @@ export class DatabaseStack extends Stack {
       }
     );
 
+    new CfnOutput(this, "CatalogItemsQueueArn", {
+      value: catalogItemsQueue.queueArn,
+      exportName: "CatalogItemsQueueArn",
+    });
+
+    new CfnOutput(this, "CatalogItemsQueueUrl", {
+      value: catalogItemsQueue.queueUrl,
+      exportName: "CatalogItemsQueueUrl",
+    });
+
     const getStockLambda = new lambda.Function(this, "GetStockFunction", {
       runtime: lambda.Runtime.NODEJS_20_X,
       memorySize: 512,
@@ -162,4 +173,6 @@ export class DatabaseStack extends Stack {
     );
     api.root.addResource("stock").addMethod("GET", getStockIntegration);
   }
+
+  
 }
