@@ -1,14 +1,14 @@
 {
   "name": "todo",
   "version": "1.0.0",
-  "main": "handler.js",
+  "main": "add-product-to-Db.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "types": "./handler.d.ts",
+  "types": "./add-product-to-Db.d.ts",
   "description": "",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.896.0",
