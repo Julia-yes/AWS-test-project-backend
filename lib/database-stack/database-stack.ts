@@ -9,6 +9,9 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { CfnOutput } from "aws-cdk-lib";
+import { aws_sns as sns, aws_sns_subscriptions as subs } from "aws-cdk-lib";
+
+const testEmail = "test@gmail.com";
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -135,6 +138,18 @@ export class DatabaseStack extends Stack {
       },
     });
 
+    const createProductTopic = new sns.Topic(this, "CreateProductTopic", {
+      topicName: "createProductTopic",
+    });
+
+    createProductTopic.addSubscription(new subs.EmailSubscription(testEmail));
+
+    catalogBatchProcess.addEnvironment(
+      "SNS_TOPIC_ARN",
+      createProductTopic.topicArn
+    );
+
+    createProductTopic.grantPublish(catalogBatchProcess);
     productsTable.grantWriteData(createProductLambda);
     productsTable.grantWriteData(catalogBatchProcess);
     stockTable.grantWriteData(createProductLambda);
@@ -173,6 +188,4 @@ export class DatabaseStack extends Stack {
     );
     api.root.addResource("stock").addMethod("GET", getStockIntegration);
   }
-
-  
 }

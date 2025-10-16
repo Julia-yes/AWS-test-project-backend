@@ -60,7 +60,7 @@ export class ImportServiceStack extends cdk.Stack {
       new apigateway.LambdaIntegration(importProductsFileFunction),
       {}
     );
-    console.log("!!!1", catalogItemsQueue.queueUrl);
+
     const importFileParserFunction = new lambda.Function(
       this,
       "ImportFileParserFunction",

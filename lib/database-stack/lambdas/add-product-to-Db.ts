@@ -50,8 +50,8 @@ export const addProductToDb = async (data: Body) => {
       });
   
       await dynamoDB.send(addProductCommand);
-      console.log("Product added successfully:", productId);
-  
+      console.log("Product added successfully:", data.title);
+
       const addStockCommand = new PutItemCommand({
         TableName: stockTable,
         Item: {
@@ -59,9 +59,9 @@ export const addProductToDb = async (data: Body) => {
           count: { N: data.count.toString() },
         },
       });
-  
-      await dynamoDB.send(addStockCommand);
-      console.log("Stock added successfully for product:", productId);
 
-  return productId;
+      await dynamoDB.send(addStockCommand);
+      console.log("Stock added successfully for product:", data.title);
+
+  return data.title;
 };
