@@ -1,17 +1,18 @@
 {
   "name": "todo",
   "version": "1.0.0",
-  "main": "handler.js",
+  "main": "add-product-to-Db.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "types": "./handler.d.ts",
+  "types": "./add-product-to-Db.d.ts",
   "description": "",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.896.0",
+    "@aws-sdk/client-sns": "^3.911.0",
     "@types/aws-lambda": "^8.10.152",
     "aws-lambda": "^1.0.7",
     "uuid": "^13.0.0"
