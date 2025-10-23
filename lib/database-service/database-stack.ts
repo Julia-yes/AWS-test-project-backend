@@ -19,9 +19,8 @@ dotenv.config();
 const PRODUCTS_TABLE_NAME = process.env.PRODUCTS_TABLE_NAME;
 const STOCK_TABLE_NAME = process.env.STOCK_TABLE_NAME;
 const REGION = process.env.AWS_REGION;
-const LAMBDA_API_URL = process.env.LAMBDA_API_URL;
 
-if (!PRODUCTS_TABLE_NAME || !STOCK_TABLE_NAME || !REGION || !LAMBDA_API_URL) {
+if (!PRODUCTS_TABLE_NAME || !STOCK_TABLE_NAME || !REGION) {
   throw new Error(
     "Missing required environment variables. Please check your .env file."
   );

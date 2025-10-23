@@ -5,24 +5,22 @@ const stockTable = process.env.STOCK_TABLE_NAME as string;
 const dynamoDB = new DynamoDBClient({ region: process.env.AWS_REGION });
 
 export interface Product {
-    id: string;
-    title: string;
-    description: string;
-    price: number;
-  }
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+}
 
-  interface Stock {
-    product_id: string;
-    count: number;
-  }
-  
+interface Stock {
+  product_id: string;
+  count: number;
+}
 
 export const getProductsList = async () => {
   try {
     const productsCommand = new ScanCommand({
       TableName: productsTable,
     });
-
     const result = await dynamoDB.send(productsCommand);
 
     const products: Product[] =
@@ -60,7 +58,12 @@ export const getProductsList = async () => {
 
     return {
       statusCode: 200,
-      body: combinedProducts,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+      },
+      body: JSON.stringify(combinedProducts),
     };
   } catch (error) {
     console.error("Error retrieving products:", error);
