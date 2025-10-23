@@ -8,10 +8,19 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as s3notifications from "aws-cdk-lib/aws-s3-notifications";
 import { join } from "path";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import { Fn } from "aws-cdk-lib";
+import * as iam from "aws-cdk-lib/aws-iam";
 
 export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const basicAuthorizerLambda = lambda.Function.fromFunctionArn(
+      this,
+      "ImportedBasicAuthorizerLambda",
+      Fn.importValue("BasicAuthorizerLambdaArn")
+    );
 
     const importBucket = new s3.Bucket(this, "ImportServiceBucket", {
       bucketName: `import-service-bucket-${this.account}`,
@@ -20,6 +29,11 @@ export class ImportServiceStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
+    const catalogItemsQueue = sqs.Queue.fromQueueArn(
+      this,
+      "ImportedCatalogItemsQueue",
+      Fn.importValue("CatalogItemsQueueArn")
+    );
     new s3deploy.BucketDeployment(this, "CreateUploadedFolder", {
       destinationBucket: importBucket,
       destinationKeyPrefix: "uploaded/",
@@ -41,6 +55,15 @@ export class ImportServiceStack extends cdk.Stack {
       }
     );
 
+    const authorizer = new apigateway.TokenAuthorizer(
+      this,
+      "ImportApiAuthorizer",
+      {
+        handler: basicAuthorizerLambda,
+        identitySource: apigateway.IdentitySource.header("Authorization"),
+      }
+    );
+
     importBucket.grantReadWrite(importProductsFileFunction);
 
     const api = new apigateway.RestApi(this, "ImportServiceAPI", {
@@ -51,7 +74,10 @@ export class ImportServiceStack extends cdk.Stack {
     importResource.addMethod(
       "GET",
       new apigateway.LambdaIntegration(importProductsFileFunction),
-      {}
+      {
+        authorizer,
+        authorizationType: apigateway.AuthorizationType.CUSTOM,
+      }
     );
 
     const importFileParserFunction = new lambda.Function(
@@ -65,6 +91,7 @@ export class ImportServiceStack extends cdk.Stack {
         code: lambda.Code.fromAsset(join(__dirname, "./")),
         environment: {
           BUCKET_NAME: importBucket.bucketName,
+          SQS_URL: catalogItemsQueue.queueUrl,
         },
       }
     );
@@ -78,5 +105,7 @@ export class ImportServiceStack extends cdk.Stack {
         prefix: "uploaded/",
       }
     );
+
+    catalogItemsQueue.grantSendMessages(importFileParserFunction);
   }
 }
