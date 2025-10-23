@@ -6,6 +6,7 @@ import { AuthorizationServiceStack } from "../lib/authorization-service/authoriz
 
 const app = new cdk.App();
 new BackendStack(app, "BackendStack", {});
-new DatabaseStack(app, 'DatabaseStack', {});
-new ImportServiceStack(app, "ImportServiceStack", {});
+new DatabaseStack(app, "DatabaseStack", {});
 new AuthorizationServiceStack(app, "AuthorizationServiceStack", {});
+new ImportServiceStack(app, "ImportServiceStack", {});
+
