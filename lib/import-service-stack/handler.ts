@@ -8,9 +8,12 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import csv from "csv-parser";
 import * as stream from "stream";
 import { promisify } from "util";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 
 const s3 = new S3Client({});
 const bucketName = process.env.BUCKET_NAME;
+const sqs = new SQSClient({});
+const queueUrl = process.env.SQS_URL;
 
 const pipeline = promisify(stream.pipeline);
 
@@ -74,9 +77,20 @@ export const parser = async (event: S3Event) => {
         csv(),
         new stream.Writable({
           objectMode: true,
-          write(record, encoding, callback) {
-            console.log("Parsed record:", record);
-            callback();
+          async write(record, encoding, callback) {
+            try {
+              await sqs.send(
+                new SendMessageCommand({
+                  QueueUrl: queueUrl,
+                  MessageBody: JSON.stringify(record),
+                })
+              );
+              console.log("Message sent to SQS:", record);
+              callback();
+            } catch (err) {
+              console.error("Failed to send message to SQS:", err);
+              callback(err as Error);
+            }
           },
         })
       );

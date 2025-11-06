@@ -10,6 +10,7 @@
   "types": "./import-service-stack.d.ts",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.910.0",
     "csv-parser": "^3.2.0"
   }
 }
