@@ -11,7 +11,7 @@ import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { CfnOutput } from "aws-cdk-lib";
 import { aws_sns as sns, aws_sns_subscriptions as subs } from "aws-cdk-lib";
 
-const testEmail = "test@gmail.com";
+const testEmail = "echo@mail.ru";
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -19,9 +19,8 @@ dotenv.config();
 const PRODUCTS_TABLE_NAME = process.env.PRODUCTS_TABLE_NAME;
 const STOCK_TABLE_NAME = process.env.STOCK_TABLE_NAME;
 const REGION = process.env.AWS_REGION;
-const LAMBDA_API_URL = process.env.LAMBDA_API_URL;
 
-if (!PRODUCTS_TABLE_NAME || !STOCK_TABLE_NAME || !REGION || !LAMBDA_API_URL) {
+if (!PRODUCTS_TABLE_NAME || !STOCK_TABLE_NAME || !REGION) {
   throw new Error(
     "Missing required environment variables. Please check your .env file."
   );
@@ -60,7 +59,7 @@ export class DatabaseStack extends Stack {
       {
         runtime: lambda.Runtime.NODEJS_20_X,
         handler: "catalog-batch-process.catalogBatchProcess",
-        code: lambda.Code.fromAsset(join(__dirname, "./lambdas")),
+        code: lambda.Code.fromAsset(join(__dirname, "lambdas")),
         environment: {
           PRODUCTS_TABLE_NAME: productsTable.tableName,
           STOCK_TABLE_NAME: stockTable.tableName,
@@ -79,7 +78,7 @@ export class DatabaseStack extends Stack {
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
       handler: "create-product.createProduct",
-      code: lambda.Code.fromAsset(join(__dirname, "./lambdas")),
+      code: lambda.Code.fromAsset(join(__dirname, "lambdas")),
       environment: {
         PRODUCTS_TABLE_NAME: productsTable.tableName,
         STOCK_TABLE_NAME: stockTable.tableName,
@@ -93,7 +92,7 @@ export class DatabaseStack extends Stack {
         memorySize: 512,
         timeout: cdk.Duration.seconds(5),
         handler: "get-products-list.getProductsList",
-        code: lambda.Code.fromAsset(join(__dirname, "./lambdas")),
+        code: lambda.Code.fromAsset(join(__dirname, "lambdas")),
         environment: {
           PRODUCTS_TABLE_NAME: productsTable.tableName,
           STOCK_TABLE_NAME: stockTable.tableName,
@@ -109,7 +108,7 @@ export class DatabaseStack extends Stack {
         memorySize: 512,
         timeout: cdk.Duration.seconds(5),
         handler: "get-product-by-id.getProductById",
-        code: lambda.Code.fromAsset(join(__dirname, "./lambdas")),
+        code: lambda.Code.fromAsset(join(__dirname, "lambdas")),
         environment: {
           PRODUCTS_TABLE_NAME: productsTable.tableName,
           STOCK_TABLE_NAME: stockTable.tableName,
@@ -132,7 +131,7 @@ export class DatabaseStack extends Stack {
       memorySize: 512,
       timeout: cdk.Duration.seconds(5),
       handler: "get-stock.getStock",
-      code: lambda.Code.fromAsset(join(__dirname, "./lambdas")),
+      code: lambda.Code.fromAsset(join(__dirname, "lambdas")),
       environment: {
         STOCK_TABLE_NAME: stockTable.tableName,
       },
